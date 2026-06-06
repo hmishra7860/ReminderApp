@@ -374,3 +374,74 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
 /* ─── Req marker ─────────────────────────────────────── */
 .req { color: var(--danger); }
+
+/* ─── Authentication Pages ─────────────────────────────────────────── */
+body.unauthenticated .navbar, 
+body.unauthenticated .sidebar { 
+  display: none; 
+}
+body.unauthenticated .container { 
+  grid-template-columns: 1fr; 
+  height: 100vh; 
+  display: block;
+}
+
+.auth-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 20px;
+}
+
+.auth-card {
+  background: var(--surface);
+  padding: 40px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.auth-card .logo {
+  justify-content: center;
+  margin-bottom: 24px;
+  font-size: 24px;
+}
+
+.auth-card h2 {
+  font-size: 20px;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+
+.auth-card .form-group {
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.auth-card .btn-primary {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  font-size: 15px;
+}
+
+.auth-links {
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.auth-links a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
+}

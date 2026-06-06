@@ -4,7 +4,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.db import Base
 import enum
 
-
 class CategoryEnum(str, enum.Enum):
     Work = "Work"
     Personal = "Personal"
@@ -12,11 +11,23 @@ class CategoryEnum(str, enum.Enum):
     Finance = "Finance"
     Health = "Health"
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    reminders = relationship("Reminder", back_populates="owner", cascade="all, delete-orphan")
+    birthdays = relationship("Birthday", back_populates="owner", cascade="all, delete-orphan")
 
 class Reminder(Base):
     __tablename__ = "reminders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[CategoryEnum] = mapped_column(Enum(CategoryEnum), default=CategoryEnum.Personal)
@@ -24,16 +35,20 @@ class Reminder(Base):
     time: Mapped[str | None] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+    owner = relationship("User", back_populates="reminders")
 
 class Birthday(Base):
     __tablename__ = "birthdays"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
+    custom_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+    owner = relationship("User", back_populates="birthdays")
 
 class NotificationLog(Base):
     __tablename__ = "notification_logs"

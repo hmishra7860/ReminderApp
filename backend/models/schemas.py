@@ -3,6 +3,28 @@ from datetime import date, datetime
 from typing import Optional
 from models.models import CategoryEnum
 
+# ─── Auth & User ──────────────────────────────────────────────────────────────
+class UserCreate(BaseModel):
+    full_name: str = Field(..., min_length=2, max_length=255)
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    confirm_password: str = Field(..., min_length=8)
+
+class UserResponse(BaseModel):
+    id: int
+    full_name: str
+    email: EmailStr
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+# ─── Update ReminderCreate / BirthdayCreate ───────────────────────────────────
+# Keep your existing Reminder/Birthday schemas, but ensure they don't ask 
+# for user_id in the create payloads, as we will extract that from the JWT token.
+
 
 # ─── Reminder ─────────────────────────────────────────────────────────────────
 class ReminderBase(BaseModel):
