@@ -1,4 +1,4 @@
-const API_BASE = window.location.hostname === 'localhost'
+const API_BASE = window.location.port === '3000'
   ? 'http://localhost:8000'
   : '/api';
 

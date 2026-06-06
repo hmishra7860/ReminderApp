@@ -1,6 +1,5 @@
 FROM nginx:1.25-alpine
 
 COPY . /usr/share/nginx/html
-COPY nginx-frontend.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
