@@ -115,9 +115,7 @@ document.getElementById('todayBtn').addEventListener('click', () => {
 });
 
 function refreshCalendar() {
-  const reminders = LocalDB.getReminders();
-  const birthdays = LocalDB.getBirthdays();
-  renderCalendar(reminders, birthdays);
+  renderCalendar(window.AppState.reminders, window.AppState.birthdays);
 }
 
 // View toggle (UI only)

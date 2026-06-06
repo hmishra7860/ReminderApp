@@ -1,3 +1,5 @@
+window.AppState = { reminders: [], birthdays: [] };
+
 // ─── Navigation ───────────────────────────────────────────────────────────────
 const pages = { dashboard: 'page-dashboard', reminders: 'page-reminders', birthdays: 'page-birthdays', settings: 'page-settings' };
 
@@ -17,15 +19,14 @@ document.querySelectorAll('.menu li').forEach(li => {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// Close on overlay click
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.remove('open');
-  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
 });
 
-// Reminder modal open buttons
-document.getElementById('openReminderModal').addEventListener('click', () => {
+document.getElementById('openReminderModal').addEventListener('click', resetReminderModal);
+document.getElementById('openReminderModal2')?.addEventListener('click', resetReminderModal);
+
+function resetReminderModal() {
   document.getElementById('reminderModalTitle').textContent = 'New Reminder';
   document.getElementById('reminderId').value = '';
   document.getElementById('rTitle').value = '';
@@ -34,20 +35,8 @@ document.getElementById('openReminderModal').addEventListener('click', () => {
   document.getElementById('rDate').value = '';
   document.getElementById('rTime').value = '';
   openModal('reminderModal');
-});
+}
 
-document.getElementById('openReminderModal2')?.addEventListener('click', () => {
-  document.getElementById('reminderModalTitle').textContent = 'New Reminder';
-  document.getElementById('reminderId').value = '';
-  document.getElementById('rTitle').value = '';
-  document.getElementById('rDesc').value = '';
-  document.getElementById('rCategory').value = 'Work';
-  document.getElementById('rDate').value = '';
-  document.getElementById('rTime').value = '';
-  openModal('reminderModal');
-});
-
-// Close buttons
 document.getElementById('closeReminderModal').addEventListener('click', () => closeModal('reminderModal'));
 document.getElementById('cancelReminderModal').addEventListener('click', () => closeModal('reminderModal'));
 document.getElementById('closeBirthdayModal').addEventListener('click', () => closeModal('birthdayModal'));
@@ -64,20 +53,27 @@ function showToast(msg, type = '') {
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-// ─── Refresh All ──────────────────────────────────────────────────────────────
-function refreshAll() {
-  const reminders = LocalDB.getReminders();
-  const birthdays = LocalDB.getBirthdays();
-  renderCalendar(reminders, birthdays);
-  renderReminderGrid(reminders);
+// ─── Global Refresh ───────────────────────────────────────────────────────────
+async function loadDataFromAPI() {
+  try {
+    const [remFromApi, bFromApi] = await Promise.all([ ReminderAPI.getAll(), BirthdayAPI.getAll() ]);
+    AppState.reminders = remFromApi || [];
+    AppState.birthdays = bFromApi || [];
+    refreshUI();
+  } catch (err) {
+    console.error("Failed to load data:", err);
+  }
+}
+
+function refreshUI() {
+  renderCalendar(AppState.reminders, AppState.birthdays);
+  renderReminderGrid(AppState.reminders);
   renderUpcoming();
   renderBirthdaySidebar();
   updateStats();
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-(async function init() {
-  // ─── Authentication & Initialization ──────────────────────────────────────────
+// ─── Authentication & Initialization ──────────────────────────────────────────
 const Auth = {
   login: async () => {
     const email = document.getElementById('loginEmail').value;
@@ -85,8 +81,7 @@ const Auth = {
     const btn = document.getElementById('loginBtn');
     
     try {
-      btn.textContent = "Logging in...";
-      btn.disabled = true;
+      btn.textContent = "Logging in..."; btn.disabled = true;
       const res = await AuthAPI.login(email, pass);
       localStorage.setItem('rcal_token', res.access_token);
       showToast('Login successful!', 'success');
@@ -94,8 +89,7 @@ const Auth = {
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
-      btn.textContent = "Log In";
-      btn.disabled = false;
+      btn.textContent = "Log In"; btn.disabled = false;
     }
   },
 
@@ -106,21 +100,17 @@ const Auth = {
     const confirm = document.getElementById('regConfirmPassword').value;
     const btn = document.getElementById('registerBtn');
 
-    if (pass !== confirm) {
-      return showToast('Passwords do not match', 'error');
-    }
+    if (pass !== confirm) return showToast('Passwords do not match', 'error');
 
     try {
-      btn.textContent = "Creating account...";
-      btn.disabled = true;
+      btn.textContent = "Creating account..."; btn.disabled = true;
       await AuthAPI.register({ full_name: name, email: email, password: pass, confirm_password: confirm });
       showToast('Registration successful! Please log in.', 'success');
       switchPage('page-login');
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
-      btn.textContent = "Sign Up";
-      btn.disabled = false;
+      btn.textContent = "Sign Up"; btn.disabled = false;
     }
   },
 
@@ -136,31 +126,24 @@ const AppInit = {
     try {
       const profile = await AuthAPI.getProfile();
       
-      // Update UI with user data
-      document.getElementById('profileName').textContent = profile.full_name;
-      document.getElementById('profileAvatar').textContent = profile.full_name.charAt(0).toUpperCase();
+      const nameEl = document.getElementById('profileName');
+      const avatarEl = document.getElementById('profileAvatar');
+      if (nameEl) nameEl.textContent = profile.full_name;
+      if (avatarEl) avatarEl.textContent = profile.full_name.charAt(0).toUpperCase();
       
-      // Remove auth restrictions
       document.body.classList.remove('unauthenticated');
       switchPage('page-dashboard');
       
-      // Fetch user data
-      const [remFromApi, bFromApi] = await Promise.all([
-        ReminderAPI.getAll(),
-        BirthdayAPI.getAll(),
-      ]);
-
-      if (remFromApi) LocalDB.saveReminders(remFromApi);
-      if (bFromApi) LocalDB.saveBirthdays(bFromApi);
-      refreshAll();
+      await loadDataFromAPI(); // Fetch DB data and populate UI
 
     } catch (err) {
+      console.error("Session start failed:", err);
       Auth.logout();
     }
   }
 };
 
-// ─── UI Routing & Events ──────────────────────────────────────────────────────
+// ─── Events ───────────────────────────────────────────────────────────────────
 function switchPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId).classList.add('active');
@@ -171,18 +154,15 @@ document.getElementById('goToLogin').addEventListener('click', () => switchPage(
 document.getElementById('loginBtn').addEventListener('click', Auth.login);
 document.getElementById('registerBtn').addEventListener('click', Auth.register);
 
-// Add logout button to your profile menu (Optional but recommended)
 document.querySelector('.profile').addEventListener('click', () => {
   if (confirm("Do you want to log out?")) Auth.logout();
 });
 
-// App Startup
+// Start App
 (async function init() {
-  const token = localStorage.getItem('rcal_token');
-  if (token) {
+  if (localStorage.getItem('rcal_token')) {
     await AppInit.startSession();
   } else {
     Auth.logout();
   }
-})();
 })();

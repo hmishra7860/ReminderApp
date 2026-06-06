@@ -1,21 +1,16 @@
 // ─── Birthdays ────────────────────────────────────────────────────────────────
 function renderBirthdayGrid() {
   const el = document.getElementById('birthdayGrid');
-  const list = LocalDB.getBirthdays();
+  const list = AppState.birthdays;
 
   if (!list.length) {
-    el.innerHTML = `
-      <div class="empty-state">
-        <i class="fa-solid fa-cake-candles"></i>
-        <p>No birthdays added yet. Add one to start sending wishes!</p>
-      </div>`;
+    el.innerHTML = `<div class="empty-state"><i class="fa-solid fa-cake-candles"></i><p>No birthdays added yet.</p></div>`;
     return;
   }
 
   el.innerHTML = list.map(b => {
     const age = getAge(b.date_of_birth);
-    const next = nextBirthday(b.date_of_birth);
-    const daysLeft = daysUntil(next);
+    const daysLeft = daysUntil(nextBirthday(b.date_of_birth));
     return `
       <div class="reminder-card" data-bid="${b.id}">
         <div class="card-accent" style="background:#EC4899"></div>
@@ -23,10 +18,7 @@ function renderBirthdayGrid() {
         <h4><i class="fa-solid fa-cake-candles" style="color:#EC4899;margin-right:6px"></i>${escHtml(b.name)}</h4>
         <p>${b.email || '<em style="opacity:.5">No email set</em>'}</p>
         <div class="card-meta">
-          <div class="card-date">
-            <i class="fa-regular fa-calendar"></i>
-            ${formatDate(b.date_of_birth)} · Age ${age} · ${daysLeft === 0 ? '🎉 Today!' : daysLeft + 'd left'}
-          </div>
+          <div class="card-date"><i class="fa-regular fa-calendar"></i> ${formatDate(b.date_of_birth)} · Age ${age} · ${daysLeft === 0 ? '🎉 Today!' : daysLeft + 'd left'}</div>
           <div class="card-actions">
             <button class="del-btn" data-bid="${b.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
           </div>
@@ -34,31 +26,22 @@ function renderBirthdayGrid() {
       </div>`;
   }).join('');
 
-  el.querySelectorAll('.del-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!confirm('Remove this birthday?')) return;
-      LocalDB.deleteBirthday(+btn.dataset.bid);
+  el.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!confirm('Remove this birthday?')) return;
+    try {
+      await BirthdayAPI.delete(+btn.dataset.bid);
       showToast('Birthday removed', 'success');
-      renderBirthdayGrid();
-      renderBirthdaySidebar();
-      refreshCalendar();
-    });
-  });
+      await loadDataFromAPI();
+    } catch(err) { showToast(err.message, 'error'); }
+  }));
 }
 
 function renderBirthdaySidebar() {
   const el = document.getElementById('birthdayList');
-  const today_ = new Date();
-  const list = LocalDB.getBirthdays()
-    .map(b => ({ ...b, daysLeft: daysUntil(nextBirthday(b.date_of_birth)) }))
-    .sort((a, b) => a.daysLeft - b.daysLeft)
-    .slice(0, 5);
+  const list = AppState.birthdays.map(b => ({ ...b, daysLeft: daysUntil(nextBirthday(b.date_of_birth)) })).sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 5);
 
-  if (!list.length) {
-    el.innerHTML = '<div class="sidebar-empty">No birthdays added</div>';
-    return;
-  }
+  if (!list.length) return el.innerHTML = '<div class="sidebar-empty">No birthdays added</div>';
   el.innerHTML = list.map(b => `
     <div class="sidebar-item">
       <div class="sidebar-dot" style="background:#EC4899"></div>
@@ -70,21 +53,27 @@ function renderBirthdaySidebar() {
 }
 
 // ─── Save Birthday ────────────────────────────────────────────────────────────
-document.getElementById('saveBirthday').addEventListener('click', () => {
+document.getElementById('saveBirthday').addEventListener('click', async () => {
   const name = document.getElementById('bName').value.trim();
   const dob  = document.getElementById('bDob').value;
-  if (!name) { alert('Name is required'); return; }
-  if (!dob)  { alert('Date of birth is required'); return; }
+  if (!name || !dob) return alert('Name and Date of birth are required');
 
-  LocalDB.addBirthday({ name, email: document.getElementById('bEmail').value.trim(), date_of_birth: dob });
-  showToast(`Birthday added for ${name}!`, 'success');
-  closeModal('birthdayModal');
-  renderBirthdayGrid();
-  renderBirthdaySidebar();
-  refreshCalendar();
+  try {
+    const btn = document.getElementById('saveBirthday');
+    btn.disabled = true; btn.textContent = "Saving...";
+    
+    await BirthdayAPI.create({ name, email: document.getElementById('bEmail').value.trim() || null, date_of_birth: dob });
+    showToast(`Birthday added for ${name}!`, 'success');
+    closeModal('birthdayModal');
+    await loadDataFromAPI();
+  } catch(err) {
+    showToast(err.message, 'error');
+  } finally {
+    document.getElementById('saveBirthday').disabled = false;
+    document.getElementById('saveBirthday').textContent = "Save Birthday";
+  }
 });
 
-// ─── Open button ──────────────────────────────────────────────────────────────
 document.getElementById('openBirthdayModal')?.addEventListener('click', () => {
   document.getElementById('bName').value = '';
   document.getElementById('bEmail').value = '';
@@ -94,25 +83,18 @@ document.getElementById('openBirthdayModal')?.addEventListener('click', () => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getAge(dob) {
-  const d = new Date(dob);
-  const now = new Date();
+  const d = new Date(dob); const now = new Date();
   let age = now.getFullYear() - d.getFullYear();
   if (now < new Date(now.getFullYear(), d.getMonth(), d.getDate())) age--;
   return age;
 }
-
 function nextBirthday(dob) {
-  const d = new Date(dob + 'T00:00:00');
-  const now = new Date();
+  const d = new Date(dob + 'T00:00:00'); const now = new Date();
   let next = new Date(now.getFullYear(), d.getMonth(), d.getDate());
-  if (next < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
-    next = new Date(now.getFullYear() + 1, d.getMonth(), d.getDate());
-  }
+  if (next < new Date(now.getFullYear(), now.getMonth(), now.getDate())) next = new Date(now.getFullYear() + 1, d.getMonth(), d.getDate());
   return next;
 }
-
 function daysUntil(date) {
-  const now = new Date();
-  const t = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const now = new Date(); const t = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return Math.round((date - t) / 86400000);
 }
