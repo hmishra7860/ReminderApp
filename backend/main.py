@@ -2,21 +2,28 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from prometheus_fastapi_instrumentator import Instrumentator
-from services.scheduler import start_scheduler
+# Import all routers in one go
 from routes import reminders, birthdays, health, auth
-
 from database.db import engine, Base
-from routes import reminders, birthdays, health
+from services.scheduler import start_scheduler
+import logging
+logger = logging.getLogger(__name__)
+logger.info("--- MAIN.PY IS LOADING ---")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create DB tables on startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    start_scheduler()  # Start the background scheduler
+    
+    # ADD THESE TWO PRINT STATEMENTS:
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print("!!! LIFESPAN IS RUNNING - STARTING SCHEDULER !!!")
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    
+    logger.info("Lifespan: Starting scheduler...")
+    start_scheduler() 
     yield
-
 
 app = FastAPI(
     title="ReminderCal API",

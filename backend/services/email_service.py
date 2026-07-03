@@ -14,8 +14,10 @@ from models.models import User
 logger = logging.getLogger(__name__)
 
 def _send(to: str, subject: str, html: str, user: User) -> bool:
+    print(f"📧 EMAIL SERVICE: Attempting to send to {to}...")
+
     if not user.smtp_user or not user.smtp_pass or not user.smtp_host:
-        logger.warning(f"SMTP credentials not configured for user {user.email} – email not sent.")
+        print(f"📧 EMAIL SERVICE: SMTP credentials not configured for user {user.email} – email not sent.")
         return False
     try:
         msg = MIMEMultipart("alternative")
@@ -24,15 +26,16 @@ def _send(to: str, subject: str, html: str, user: User) -> bool:
         msg["To"] = to
         msg.attach(MIMEText(html, "html"))
         
+        print(f"📧 EMAIL SERVICE: Connecting to {user.smtp_host}...")
         with smtplib.SMTP(user.smtp_host, user.smtp_port or 587) as server:
             server.starttls()
             server.login(user.smtp_user, user.smtp_pass)
             server.sendmail(user.from_email or user.smtp_user, to, msg.as_string())
             
-        logger.info(f"Email sent to {to}: {subject}")
+        print(f"📧 EMAIL SERVICE: Email sent to {to}: {subject}")
         return True
     except Exception as e:
-        logger.error(f"Failed to send email to {to}: {e}")
+        print(f"📧 EMAIL SERVICE: Failed to send email to {to}: {e}")
         return False
 
 def send_reminder_email(user: User, title: str, description: str, reminder_date: date, reminder_time: str = "") -> bool:

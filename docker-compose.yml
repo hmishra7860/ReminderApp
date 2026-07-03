@@ -29,6 +29,7 @@ services:
     container_name: rcal_backend
     restart: unless-stopped
     environment:
+      TZ: Asia/Kolkata
       DATABASE_URL: postgresql+asyncpg://rcal:rcalpass@postgres:5432/remindercal
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -40,6 +41,8 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
     networks:
       - rcal_net
     healthcheck:

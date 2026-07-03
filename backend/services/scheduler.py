@@ -1,61 +1,102 @@
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from datetime import date, datetime  # <-- Added datetime here
+"""
+Background scheduler – runs daily checks and sends emails.
+Start alongside the FastAPI app using APScheduler.
+"""
+import asyncio
 import logging
-from sqlalchemy.future import select
+from datetime import date
+from sqlalchemy import select
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy.orm import selectinload
+
 from database.db import AsyncSessionLocal
 from models.models import Reminder, Birthday, NotificationLog
-from services.email_service import send_birthday_email, send_reminder_email
+from services.email_service import send_reminder_email, send_birthday_email
 
 logger = logging.getLogger(__name__)
+
 scheduler = AsyncIOScheduler()
 
+
 async def check_reminders():
+    print(f"=============================================")
+    print(f"🚀 SCHEDULER TRIGGERED: Checking reminders...")
+    print(f"=============================================")
     today = date.today()
-    # Get the current time formatted as HH:MM (e.g., "14:30")
-    current_time_str = datetime.now().strftime("%H:%M")
-    
     async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(Reminder)
-            .options(selectinload(Reminder.owner))
-            .where(Reminder.date == today)
-        )
+        result = await db.execute(select(Reminder).options(selectinload(Reminder.owner)).where(Reminder.date == today))
         reminders = result.scalars().all()
+        
+        # LOGGING: See how many reminders the system found
+        logger.info(f"DEBUG: Found {len(reminders)} reminders for today.")
+        
         for r in reminders:
-            # Send if the exact time matches, OR if no time is set and it is exactly 08:00 AM
-            if r.time == current_time_str or (not r.time and current_time_str == "08:00"):
-                logger.info(f"Sending scheduled reminder: {r.title} at {current_time_str}")
-                send_reminder_email(r.owner, r.title, r.description, r.date, r.time)
+            # DEBUG CODE: Uncomment the line below to send the email EVERY TIME for testing
+            # success = send_reminder_email(r.owner, r.title, r.description, r.date, r.time)
+            
+            # NORMAL CODE:
+            success = send_reminder_email(r.owner, r.title, r.description, r.date, r.time)
+            
+            if success:
+                logger.info(f"DEBUG: Reminder email for {r.title} passed to SMTP.")
+            else:
+                logger.error(f"DEBUG: Reminder email for {r.title} FAILED at SMTP.")
+
 
 async def check_birthdays():
+    print(f"=============================================")
+    print(f"🚀 SCHEDULER TRIGGERED: Checking birthdays...")
+    print(f"=============================================")
     today = date.today()
+    logger.info(f"DEBUG: Running birthday check for {today}")
+    
     async with AsyncSessionLocal() as db:
+        # Fetch birthdays with owner relationship
         result = await db.execute(select(Birthday).options(selectinload(Birthday.owner)))
         birthdays = result.scalars().all()
+        
+        if not birthdays:
+            logger.info("DEBUG: No birthdays found in database.")
+
         for b in birthdays:
             dob = b.date_of_birth
+            # Check if today is the birthday
             if dob.month == today.month and dob.day == today.day:
                 age = today.year - dob.year
-                logger.info(f"Birthday today: {b.name} turns {age}")
+                logger.info(f"DEBUG: Found birthday for {b.name}, turning {age}")
+                
                 if b.email:
+                    # Capture the result of the email send
                     sent = send_birthday_email(b.owner, b.email, b.name, age)
-                    # Log notification
+                    
+                    if sent:
+                        logger.info(f"DEBUG: Birthday email for {b.name} successfully sent to {b.email}")
+                    else:
+                        logger.error(f"DEBUG: Birthday email for {b.name} FAILED to send.")
+
+                    # Log the attempt
                     log = NotificationLog(
-                        user_id=b.owner.id,
-                        type="birthday",
-                        target_email=b.email,
-                        status="sent" if sent else "failed"
+                        birthday_id=b.id,
+                        email=b.email,
+                        status="sent" if sent else "failed",
+                        message=f"Birthday wish for {b.name} (age {age})"
                     )
                     db.add(log)
+                else:
+                    logger.warning(f"DEBUG: Skipping {b.name} - No email address provided.")
+        
         await db.commit()
 
+
 def start_scheduler():
-    # 1. Reminders: Check every 1 minute so we catch the exact HH:MM times
-    scheduler.add_job(check_reminders, "interval", minutes=1, id="exact_time_reminders", replace_existing=True)
-    
-    # 2. Birthdays: Revert to running just once a day at 09:00 AM
-    scheduler.add_job(check_birthdays, "cron", hour=24, minute=0, id="daily_birthdays", replace_existing=True)
-    
-    scheduler.start()
-    logger.info("Scheduler started — checking exact times for reminders.")
+    if not scheduler.running:  # <--- CRITICAL: Prevents double-startup errors
+        scheduler.add_job(check_reminders, "interval", minutes=1, id="daily_reminders", replace_existing=True)
+        scheduler.add_job(check_birthdays, "interval", minutes=1, id="daily_birthdays", replace_existing=True)
+        scheduler.start()
+    logger.info("Test Scheduler started — checking every 1 minute.")
+
+#def start_scheduler():
+ #  scheduler.add_job(check_reminders, "cron", hour=8, minute=0, id="daily_reminders")
+ #  scheduler.add_job(check_birthdays, "cron", hour=9, minute=0, id="daily_birthdays")
+ #  scheduler.start()
+ # logger.info("Scheduler started — checks run at 08:00 and 09:00 daily.") 
