@@ -70,3 +70,25 @@ class BirthdayResponse(BirthdayBase):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# Add to backend/models/schemas.py
+class UserSmtpUpdate(BaseModel):
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_user: Optional[str] = None
+    smtp_pass: Optional[str] = None
+    from_email: Optional[str] = None
+
+# Update UserResponse to return these fields to the frontend
+class UserResponse(BaseModel):
+    id: int
+    full_name: str
+    email: EmailStr
+    created_at: datetime
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_user: Optional[str] = None
+    from_email: Optional[str] = None
+    # Intentionally excluding smtp_pass for security
+    model_config = {"from_attributes": True}

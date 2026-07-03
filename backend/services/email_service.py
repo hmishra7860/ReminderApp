@@ -9,38 +9,33 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import date
 import logging
+from models.models import User
 
 logger = logging.getLogger(__name__)
 
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASS = os.getenv("SMTP_PASS", "")
-FROM_EMAIL = os.getenv("FROM_EMAIL", SMTP_USER)
-
-
-def _send(to: str, subject: str, html: str) -> bool:
-    if not SMTP_USER or not SMTP_PASS:
-        logger.warning("SMTP credentials not configured – email not sent.")
+def _send(to: str, subject: str, html: str, user: User) -> bool:
+    if not user.smtp_user or not user.smtp_pass or not user.smtp_host:
+        logger.warning(f"SMTP credentials not configured for user {user.email} – email not sent.")
         return False
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = f"ReminderCal <{FROM_EMAIL}>"
+        msg["From"] = f"ReminderCal <{user.from_email or user.smtp_user}>"
         msg["To"] = to
         msg.attach(MIMEText(html, "html"))
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        
+        with smtplib.SMTP(user.smtp_host, user.smtp_port or 587) as server:
             server.starttls()
-            server.login(SMTP_USER, SMTP_PASS)
-            server.sendmail(FROM_EMAIL, to, msg.as_string())
+            server.login(user.smtp_user, user.smtp_pass)
+            server.sendmail(user.from_email or user.smtp_user, to, msg.as_string())
+            
         logger.info(f"Email sent to {to}: {subject}")
         return True
     except Exception as e:
         logger.error(f"Failed to send email to {to}: {e}")
         return False
 
-
-def send_reminder_email(to: str, title: str, description: str, reminder_date: date, reminder_time: str = "") -> bool:
+def send_reminder_email(user: User, title: str, description: str, reminder_date: date, reminder_time: str = "") -> bool:
     subject = f"⏰ Reminder: {title}"
     time_str = f" at {reminder_time}" if reminder_time else ""
     html = f"""
@@ -56,10 +51,10 @@ def send_reminder_email(to: str, title: str, description: str, reminder_date: da
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
       <p style="color:#94a3b8;font-size:12px">This reminder was sent by ReminderCal.</p>
     </div>"""
-    return _send(to, subject, html)
+    return _send(user.email, subject, html, user)
 
 
-def send_birthday_email(to: str, name: str, age: int) -> bool:
+def send_birthday_email(user: User, to_email: str, name: str, age: int) -> bool:
     subject = f"🎂 Happy Birthday, {name}!"
     html = f"""
     <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#fdf2f8;padding:32px;border-radius:12px">
@@ -74,4 +69,4 @@ def send_birthday_email(to: str, name: str, age: int) -> bool:
       <hr style="border:none;border-top:1px solid #fce7f3;margin:24px 0"/>
       <p style="color:#94a3b8;font-size:12px">Sent by ReminderCal • Birthday Wishes</p>
     </div>"""
-    return _send(to, subject, html)
+    return _send(to_email, subject, html, user)

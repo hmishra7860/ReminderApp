@@ -54,7 +54,8 @@ const AuthAPI = {
     return apiFetch('/auth/login', { method: 'POST', body: params });
   },
   register: (data) => apiFetch('/auth/register', { method: 'POST', body: data }),
-  getProfile: () => apiFetch('/auth/profile')
+  getProfile: () => apiFetch('/auth/profile'),
+  updateSmtp: (data) => apiFetch('/auth/profile/smtp', { method: 'PUT', body: data })
 };
 
 // ─── Reminder & Birthday CRUD (Updated to throw errors) ─────────────────────

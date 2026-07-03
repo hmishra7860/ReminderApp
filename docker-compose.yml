@@ -51,10 +51,12 @@ services:
   # ── Frontend (Nginx + static) ───────────────────────────────────────────────
   frontend:
     build:
-      context: ./frontend
+      context: ./frontEnd
       dockerfile: Dockerfile
     container_name: rcal_frontend
     restart: unless-stopped
+    volumes:
+      - ./frontEnd:/usr/share/nginx/html:ro
     depends_on:
       - backend
     networks:

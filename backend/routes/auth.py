@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from database.db import get_db
 from models.models import User
-from models.schemas import UserCreate, UserResponse, Token
+from models.schemas import UserCreate, UserResponse, Token, UserSmtpUpdate
 
 SECRET_KEY = os.getenv("JWT_SECRET", "super_secret_dev_key_change_in_prod")
 ALGORITHM = "HS256"
@@ -90,4 +90,20 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@router.put("/profile/smtp", response_model=UserResponse)
+async def update_smtp_settings(
+    settings: UserSmtpUpdate, 
+    current_user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
+    if settings.smtp_host is not None: current_user.smtp_host = settings.smtp_host
+    if settings.smtp_port is not None: current_user.smtp_port = settings.smtp_port
+    if settings.smtp_user is not None: current_user.smtp_user = settings.smtp_user
+    if settings.smtp_pass is not None: current_user.smtp_pass = settings.smtp_pass
+    if settings.from_email is not None: current_user.from_email = settings.from_email
+    
+    await db.commit()
+    await db.refresh(current_user)
     return current_user

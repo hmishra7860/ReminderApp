@@ -130,6 +130,14 @@ const AppInit = {
       const avatarEl = document.getElementById('profileAvatar');
       if (nameEl) nameEl.textContent = profile.full_name;
       if (avatarEl) avatarEl.textContent = profile.full_name.charAt(0).toUpperCase();
+
+      if (document.getElementById('smtpHost')) {
+        document.getElementById('smtpHost').value = profile.smtp_host || '';
+        document.getElementById('smtpPort').value = profile.smtp_port || '';
+        document.getElementById('smtpUser').value = profile.smtp_user || '';
+        document.getElementById('fromEmail').value = profile.from_email || '';
+        // Note: We intentionally leave the password blank for security
+      }
       
       document.body.classList.remove('unauthenticated');
       switchPage('page-dashboard');
@@ -150,6 +158,44 @@ function switchPage(pageId) {
 }
 
 document.getElementById('goToRegister').addEventListener('click', () => switchPage('page-register'));
+
+// ─── Save SMTP Settings (Bulletproof Method) ──────────────────────────────────
+document.addEventListener('click', async (e) => {
+  // Check if the clicked element has the ID 'saveSmtpBtn'
+  const Btn = e.target.closest('#saveSmtpBtn');
+  
+  if (Btn) {
+    e.preventDefault(); 
+    console.log("Save button clicked! Gathering data...");
+    
+    // Gather values from the form
+    const data = {
+      smtp_host: document.getElementById('smtpHost')?.value.trim() || null,
+      smtp_port: parseInt(document.getElementById('smtpPort')?.value) || null,
+      smtp_user: document.getElementById('smtpUser')?.value.trim() || null,
+      smtp_pass: document.getElementById('smtpPass')?.value.trim() || null,
+      from_email: document.getElementById('fromEmail')?.value.trim() || null
+    };
+
+    console.log("Save button clicked! Data to send:", data); // <-- Debugging line
+
+    try {
+      Btn.textContent = "Saving..."; 
+      Btn.disabled = true;
+      
+      await AuthAPI.updateSmtp(data);
+      showToast('SMTP settings saved successfully!', 'success');
+      
+    } catch (err) {
+      console.error("API Error:", err);
+      showToast(err.message || 'Failed to save', 'error');
+    } finally {
+      Btn.textContent = "Save SMTP Details"; 
+      Btn.disabled = false;
+    }
+  }
+});
+
 document.getElementById('goToLogin').addEventListener('click', () => switchPage('page-login'));
 document.getElementById('loginBtn').addEventListener('click', Auth.login);
 document.getElementById('registerBtn').addEventListener('click', Auth.register);

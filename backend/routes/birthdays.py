@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.post("", response_model=BirthdayResponse, status_code=status.HTTP_201_CREATED)
 async def create_birthday(payload: BirthdayCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    birthday = Birthday(**payload.model_dump())
+    birthday = Birthday(**payload.model_dump(), user_id=current_user.id)
     db.add(birthday)
     await db.commit()
     await db.refresh(birthday)
@@ -22,7 +22,7 @@ async def create_birthday(payload: BirthdayCreate, db: AsyncSession = Depends(ge
 
 @router.get("", response_model=List[BirthdayResponse])
 async def list_birthdays(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Birthday).order_by(Birthday.name))
+    result = await db.execute(select(Birthday).where(Birthday.user_id == current_user.id).order_by(Birthday.name))
     return result.scalars().all()
 
 

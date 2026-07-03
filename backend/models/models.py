@@ -18,6 +18,13 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    smtp_host: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    smtp_port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    smtp_user: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    smtp_pass: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    from_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     reminders = relationship("Reminder", back_populates="owner", cascade="all, delete-orphan")

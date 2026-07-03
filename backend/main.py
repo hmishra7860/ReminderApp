@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from prometheus_fastapi_instrumentator import Instrumentator
+from services.scheduler import start_scheduler
 from routes import reminders, birthdays, health, auth
 
 from database.db import engine, Base
@@ -13,6 +14,7 @@ async def lifespan(app: FastAPI):
     # Create DB tables on startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    start_scheduler()  # Start the background scheduler
     yield
 
 

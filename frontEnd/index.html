@@ -193,6 +193,14 @@
       <h1><i class="fa-solid fa-gear"></i> Settings</h1>
     </div>
     <div class="settings-card">
+      <h3>Custom SMTP Settings</h3>
+      <div class="form-group"><label>SMTP Host</label><input type="text" id="smtpHost" class="search-input" placeholder="smtp.gmail.com" /></div>
+      <div class="form-group"><label>SMTP Port</label><input type="number" id="smtpPort" class="search-input" placeholder="587" /></div>
+      <div class="form-group"><label>SMTP Username / Email</label><input type="email" id="smtpUser" class="search-input" placeholder="you@gmail.com" /></div>
+      <div class="form-group"><label>SMTP Password (App Password)</label><input type="password" id="smtpPass" class="search-input" placeholder="••••••••" /></div>
+      <div class="form-group"><label>From Email</label><input type="email" id="fromEmail" class="search-input" placeholder="you@gmail.com" /></div>
+      <button class="create-btn" id="saveSmtpBtn" style="margin-top:12px">Save SMTP Details</button>
+
       <h3>Email Notifications</h3>
       <label class="toggle-row">
         <span>Enable email reminders</span>
