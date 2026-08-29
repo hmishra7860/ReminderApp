@@ -1,0 +1,19 @@
+[33mcommit aa2d97b71074f7d7f3f3bd260e9ef120efc3c82d[m
+Author: hmishra7860 <h.mishra7860@gmail.com>
+Date:   Sun Aug 30 03:46:07 2026 +0530
+
+    Updating Reoccurring feature to feature branch
+
+ backend/models/__pycache__/models.cpython-312.pyc  | Bin [31m5203[m -> [32m5305[m bytes
+ backend/models/__pycache__/schemas.cpython-312.pyc | Bin [31m4243[m -> [32m4442[m bytes
+ backend/models/models.py                           |   3 [32m+[m[31m-[m
+ backend/models/schemas.py                          |  40 [32m+++[m[31m-[m
+ backend/requirements.txt                           |   3 [32m+[m[31m-[m
+ .../services/__pycache__/scheduler.cpython-312.pyc | Bin [31m5940[m -> [32m6600[m bytes
+ backend/services/scheduler.py                      |  47 [32m++[m[31m--[m
+ frontEnd/css/modal.css                             |  22 [32m++[m
+ frontEnd/index.html                                |  18 [32m+[m[31m-[m
+ frontEnd/js/app.js                                 |   1 [32m+[m
+ frontEnd/js/calendar.js                            | 249 [32m+++++++++++++++++[m[31m----[m
+ frontEnd/js/reminders.js                           |  18 [32m++[m
+ 12 files changed, 336 insertions(+), 65 deletions(-)
