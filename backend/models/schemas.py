@@ -1,7 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field
-from datetime import date, datetime
+from datetime import date as dt_date , datetime
 from typing import Optional
 from models.models import CategoryEnum
+from enum import Enum
 
 # ─── Auth & User ──────────────────────────────────────────────────────────────
 class UserCreate(BaseModel):
@@ -31,8 +32,9 @@ class ReminderBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     category: CategoryEnum = CategoryEnum.Personal
-    date: date
+    date: dt_date
     time: Optional[str] = None
+    recurrence: Optional[str] = None  # Default to "none" if not provided
 
 
 class ReminderCreate(ReminderBase):
@@ -43,9 +45,9 @@ class ReminderUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = None
     category: Optional[CategoryEnum] = None
-    date: Optional[date] = None
+    date: Optional[dt_date] = None
     time: Optional[str] = None
-
+    recurrence: Optional[str] = None
 
 class ReminderResponse(ReminderBase):
     id: int
@@ -58,7 +60,8 @@ class ReminderResponse(ReminderBase):
 class BirthdayBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     email: Optional[str] = None
-    date_of_birth: date
+    date_of_birth: dt_date
+    custom_message: Optional[str] = None
 
 
 class BirthdayCreate(BirthdayBase):
@@ -92,3 +95,30 @@ class UserResponse(BaseModel):
     from_email: Optional[str] = None
     # Intentionally excluding smtp_pass for security
     model_config = {"from_attributes": True}
+
+
+
+#------------------------Recurrence Enum------------------------
+# class RecurrenceEnum(str, Enum):
+#     none = "none"
+#     daily = "daily"
+#     weekly = "weekly"
+#     monthly = "monthly"
+#     yearly = "yearly"
+
+# class ReminderCreate(BaseModel):
+#     title: str = Field(..., min_length=1, max_length=255)
+#     description: Optional[str] = None
+#     category: CategoryEnum = CategoryEnum.Personal
+#     recurrence: RecurrenceEnum = RecurrenceEnum.none
+#     date: date
+#     time: Optional[str] = None
+
+# class RemiderResponse(ReminderCreate):
+#     id: int
+
+#     class Config:
+#         orm_mode = True 
+
+
+

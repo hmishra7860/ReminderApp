@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from sqlalchemy import String, Text, Date, Time, DateTime, Integer, ForeignKey, Enum
+from sqlalchemy import String, Text, Date, Time, DateTime, Integer, ForeignKey, Enum, Column, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.db import Base
 import enum
@@ -38,6 +38,7 @@ class Reminder(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[CategoryEnum] = mapped_column(Enum(CategoryEnum), default=CategoryEnum.Personal)
+    recurrence = Column(String, default="none")
     date: Mapped[date] = mapped_column(Date, nullable=False)
     time: Mapped[str | None] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

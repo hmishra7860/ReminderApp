@@ -48,10 +48,17 @@ function renderUpcoming() {
 
   if (!upcoming.length) return el.innerHTML = '<div class="sidebar-empty">No upcoming reminders</div>';
   el.innerHTML = upcoming.map(r => `
+      <div class="card-meta">
+          <div class="card-date">
+            <i class="fa-regular fa-calendar"></i> ${formatDate(r.date)}${r.time ? ` · ${r.time}` : ''}
+            ${r.recurrence && r.recurrence !== 'none' ? `<i class="fa-solid fa-repeat" title="Repeats ${r.recurrence}" style="margin-left: 8px; color: var(--primary);"></i>` : ''}
+          </div>
+          <div class="card-actions">
       <div class="sidebar-item" data-id="${r.id}">
         <div class="sidebar-dot" style="background:${CATEGORY_COLORS[r.category] || '#64748B'}"></div>
         <div class="sidebar-item-text"><strong>${escHtml(r.title)}</strong><span>${relativeDate(r.date)}</span></div>
       </div>`).join('');
+      
   el.querySelectorAll('.sidebar-item').forEach(item => item.addEventListener('click', () => openViewModal(AppState.reminders.find(x => x.id == item.dataset.id))));
 }
 
@@ -79,12 +86,21 @@ document.getElementById('saveReminder').addEventListener('click', async () => {
   if (!title || !date) return alert('Title and Date are required');
 
   const id = document.getElementById('reminderId').value;
+  
+  // Safely grab the dropdown value (defaults to 'none' if missing)
+  const recElement = document.getElementById('rRecurrence');
+  const recValue = recElement ? recElement.value : "none";
+
   const data = {
     title, date,
     description: document.getElementById('rDesc').value.trim() || null,
     category: document.getElementById('rCategory').value,
     time: document.getElementById('rTime').value || null,
+    recurrence: recValue
   };
+
+  // DEBUG LOG: This will show us exactly what the frontend is trying to send
+  console.log("🚀 PAYLOAD TO BACKEND:", data);
 
   try {
     const btn = document.getElementById('saveReminder');
@@ -116,6 +132,7 @@ function openEditModal(r) {
   document.getElementById('rCategory').value = r.category || 'Work';
   document.getElementById('rDate').value = r.date || '';
   document.getElementById('rTime').value = r.time || '';
+  if(document.getElementById('rRecurrence')) document.getElementById('rRecurrence').value = r.recurrence || 'none';
   openModal('reminderModal');
 }
 
@@ -126,6 +143,7 @@ function openViewModal(r) {
     <div class="view-row"><div class="view-label">Category</div><div>${r.category || '—'}</div></div>
     <div class="view-row"><div class="view-label">Date</div><div>${formatDate(r.date)}</div></div>
     <div class="view-row"><div class="view-label">Time</div><div>${r.time || '—'}</div></div>
+    <div class="view-row"><div class="view-label">Repeat</div><div>${repeatText}</div></div>
     <div class="view-row"><div class="view-label">Description</div><div>${r.description || '—'}</div></div>
   `;
   document.getElementById('deleteFromView').onclick = () => { closeModal('viewModal'); deleteReminder(r.id); };

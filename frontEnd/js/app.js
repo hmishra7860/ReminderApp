@@ -34,6 +34,7 @@ function resetReminderModal() {
   document.getElementById('rCategory').value = 'Work';
   document.getElementById('rDate').value = '';
   document.getElementById('rTime').value = '';
+  if(document.getElementById('rRecurrence')) document.getElementById('rRecurrence').value = 'none';
   openModal('reminderModal');
 }
 
