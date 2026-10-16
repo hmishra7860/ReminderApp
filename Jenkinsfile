@@ -50,14 +50,7 @@ pipeline {
                     file(credentialsId: 'k3s-kubeconfig', variable: 'KUBECONFIG_FILE'),
                     string(credentialsId: 'postgres-user', variable: 'PG_USER'),
                     string(credentialsId: 'postgres-password', variable: 'PG_PASS'),
-                    string(credentialsId: 'postgres-db', variable: 'PG_DB'),
-                    string(credentialsId: 'jwt-secret', variable: 'JWT_SEC'),
-                    string(credentialsId: 'smtp-host', variable: 'SMTP_H'),
-                    string(credentialsId: 'smtp-port', variable: 'SMTP_P'),
-                    string(credentialsId: 'smtp-user', variable: 'SMTP_U'),
-                    string(credentialsId: 'smtp-pass', variable: 'SMTP_PW'),
-                    string(credentialsId: 'from-email', variable: 'FROM_EM'),
-                    string(credentialsId: 'grafana-admin-password', variable: 'GRAFANA_PW')
+                    string(credentialsId: 'postgres-db', variable: 'PG_DB')
                 ]) {
                     sh '''
                         export KUBECONFIG=$KUBECONFIG_FILE
