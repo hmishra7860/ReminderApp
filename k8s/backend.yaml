@@ -54,31 +54,6 @@ spec:
                 secretKeyRef:
                   name: rcal-app-secrets
                   key: JWT_SECRET
-            - name: SMTP_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: rcal-app-secrets
-                  key: SMTP_HOST
-            - name: SMTP_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: rcal-app-secrets
-                  key: SMTP_PORT
-            - name: SMTP_USER
-              valueFrom:
-                secretKeyRef:
-                  name: rcal-app-secrets
-                  key: SMTP_USER
-            - name: SMTP_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: rcal-app-secrets
-                  key: SMTP_PASS
-            - name: FROM_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: rcal-app-secrets
-                  key: FROM_EMAIL
           livenessProbe:
             httpGet:
               path: /health
