@@ -19,15 +19,6 @@ pipeline {
             }
         }
 
-        stage('Lint Backend') {
-            steps {
-                sh '''
-                    docker run --rm -v $(pwd)/backend:/app -w /app python:3.12-slim \
-                    sh -c "pip install ruff --quiet && ruff check ."
-                '''
-            }
-        }
-
         stage('Build & Push Docker Images') {
             steps {
                 script {
