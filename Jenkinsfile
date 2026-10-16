@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+        label 'linux'
+    }
 
     environment {
         // Replace with your Docker Hub username or private registry URL (e.g., "myuser" or "registry.example.com/myuser")
