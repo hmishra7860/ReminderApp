@@ -8,9 +8,9 @@ services:
     container_name: rcal_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: remindercal
-      POSTGRES_USER: rcal
-      POSTGRES_PASSWORD: rcalpass
+      POSTGRES_DB: ${POSTGRES_DB:-remindercal}
+      POSTGRES_USER: ${POSTGRES_USER:-rcal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -139,7 +139,7 @@ services:
 
   # ── cAdvisor (container metrics) ────────────────────────────────────────────
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: gcr.io/cadvisor/cadvisor:latest 
     container_name: rcal_cadvisor
     restart: unless-stopped
     privileged: true

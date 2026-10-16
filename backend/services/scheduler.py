@@ -103,15 +103,19 @@ async def check_birthdays():
         await db.commit()
 
 
-#def start_scheduler():
-#    if not scheduler.running:  # <--- CRITICAL: Prevents double-startup errors
-#       scheduler.add_job(check_reminders, "interval", minutes=1, id="daily_reminders", replace_existing=True)
-#        scheduler.add_job(check_birthdays, "cron", hour=8, minute=0, id="daily_birthdays", replace_existing=True)
-#        scheduler.start()
-#    logger.info("Test Scheduler started — checking every 1 minute.")
-
 def start_scheduler():
-   scheduler.add_job(check_reminders, "cron", hour=8, minute=0, id="daily_reminders")
-   scheduler.add_job(check_birthdays, "cron", hour=9, minute=0, id="daily_birthdays")
-   scheduler.start()
-   logger.info("Scheduler started — checks run at 08:00 and 09:00 daily.") 
+    if not scheduler.running:  # Prevents double-startup errors
+        # ⚠️ FOR TESTING: Run BOTH every 1 minute
+        scheduler.add_job(check_reminders, "interval", minutes=1, id="daily_reminders", replace_existing=True)
+        scheduler.add_job(check_birthdays, "interval", minutes=1, id="daily_birthdays", replace_existing=True)
+        scheduler.start()
+    
+    logger.info("Scheduler started — checking BOTH every 1 minute for testing.")
+
+# --- USE THIS IN PRODUCTION INSTEAD ---
+# def start_scheduler():
+#     if not scheduler.running:
+#         scheduler.add_job(check_reminders, "cron", hour=8, minute=0, id="daily_reminders", replace_existing=True)
+#         scheduler.add_job(check_birthdays, "cron", hour=9, minute=0, id="daily_birthdays", replace_existing=True)
+#         scheduler.start()
+#     logger.info("Scheduler started — checks run at 08:00 and 09:00 daily.")
