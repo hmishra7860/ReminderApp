@@ -67,13 +67,6 @@ pipeline {
                             --from-literal=POSTGRES_PASSWORD="${PG_PASS}" \
                             --from-literal=POSTGRES_DB="${PG_DB}" \
                             --from-literal=DATABASE_URL="${DB_URL}" \
-                            --from-literal=JWT_SECRET="${JWT_SEC}" \
-                            --from-literal=SMTP_HOST="${SMTP_H}" \
-                            --from-literal=SMTP_PORT="${SMTP_P}" \
-                            --from-literal=SMTP_USER="${SMTP_U}" \
-                            --from-literal=SMTP_PASS="${SMTP_PW}" \
-                            --from-literal=FROM_EMAIL="${FROM_EM}" \
-                            --from-literal=GF_SECURITY_ADMIN_PASSWORD="${GRAFANA_PW}" \
                             --dry-run=client -o yaml | kubectl apply -f -
 
                         # 3. Replace image placeholders in manifests with current build tag
