@@ -54,41 +54,62 @@ pipeline {
                     string(credentialsId: 'jwt-secret', variable: 'JWT_SEC'),
                     string(credentialsId: 'grafana-admin-password', variable: 'GRAFANA_PW')
                 ]) {
-                    sh '''
-                        export KUBECONFIG=$KUBECONFIG_FILE
+                    script {
+                        try  {
+                                sh '''
+                                    export KUBECONFIG=$KUBECONFIG_FILE
 
-                        # 1. Ensure Namespace Exists
-                        kubectl create namespace ${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+                                    # 1. Ensure Namespace Exists
+                                    kubectl create namespace ${K8S_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 
-                        # 2. Construct DATABASE_URL dynamically and sync Kubernetes Secret from Jenkins Credentials
-                        DB_URL="postgresql+asyncpg://${PG_USER}:${PG_PASS}@postgres:5432/${PG_DB}"
+                                    # 2. Construct DATABASE_URL dynamically and sync Kubernetes Secret from Jenkins Credentials
+                                    DB_URL="postgresql+asyncpg://${PG_USER}:${PG_PASS}@postgres:5432/${PG_DB}"
 
-                        kubectl create secret generic rcal-app-secrets \
-                            --namespace=${K8S_NAMESPACE} \
-                            --from-literal=POSTGRES_USER="${PG_USER}" \
-                            --from-literal=POSTGRES_PASSWORD="${PG_PASS}" \
-                            --from-literal=POSTGRES_DB="${PG_DB}" \
-                            --from-literal=DATABASE_URL="${DB_URL}" \
-                            --from-literal=JWT_SECRET="${JWT_SEC}" \
-                            --from-literal=GF_SECURITY_ADMIN_PASSWORD="${GRAFANA_PW}" \
-                            --dry-run=client -o yaml | kubectl apply -f -
+                                    kubectl create secret generic rcal-app-secrets \
+                                        --namespace=${K8S_NAMESPACE} \
+                                        --from-literal=POSTGRES_USER="${PG_USER}" \
+                                        --from-literal=POSTGRES_PASSWORD="${PG_PASS}" \
+                                        --from-literal=POSTGRES_DB="${PG_DB}" \
+                                        --from-literal=DATABASE_URL="${DB_URL}" \
+                                        --from-literal=JWT_SECRET="${JWT_SEC}" \
+                                        --from-literal=GF_SECURITY_ADMIN_PASSWORD="${GRAFANA_PW}" \
+                                        --dry-run=client -o yaml | kubectl apply -f -
 
-                        # 3. Replace image placeholders in manifests with current build tag
-                        sed -i "s|REGISTRY_PLACEHOLDER|${DOCKER_REGISTRY}|g" k8s/backend.yaml k8s/frontend.yaml
-                        sed -i "s|TAG_PLACEHOLDER|${IMAGE_TAG}|g" k8s/backend.yaml k8s/frontend.yaml
+                                    # 3. Replace image placeholders in manifests with current build tag
+                                    sed -i "s|REGISTRY_PLACEHOLDER|${DOCKER_REGISTRY}|g" k8s/backend.yaml k8s/frontend.yaml
+                                    sed -i "s|TAG_PLACEHOLDER|${IMAGE_TAG}|g" k8s/backend.yaml k8s/frontend.yaml
 
-                        # 4. Apply Modular Kubernetes Manifests in Order
-                        kubectl apply -f k8s/database.yaml
-                        kubectl rollout status deployment/postgres -n ${K8S_NAMESPACE} --timeout=90s
+                                    # 4. Apply Modular Kubernetes Manifests in Order
+                                    kubectl apply -f k8s/database.yaml
+                                    kubectl rollout status deployment/postgres -n ${K8S_NAMESPACE} --timeout=90s
 
-                        kubectl apply -f k8s/backend.yaml
-                        kubectl rollout status deployment/backend -n ${K8S_NAMESPACE} --timeout=90s
+                                    kubectl apply -f k8s/backend.yaml
+                                    kubectl rollout status deployment/backend -n ${K8S_NAMESPACE} --timeout=90s
 
-                        kubectl apply -f k8s/frontend.yaml
-                        kubectl rollout status deployment/frontend -n ${K8S_NAMESPACE} --timeout=90s
+                                    kubectl apply -f k8s/frontend.yaml
+                                    kubectl rollout status deployment/frontend -n ${K8S_NAMESPACE} --timeout=90s
 
-                        kubectl apply -f k8s/monitoring.yaml
-                    '''
+                                    kubectl apply -f k8s/monitoring.yaml
+                                '''
+                            } catch (Exception e) {
+                                        currentBuild.result = 'FAILURE'
+                                        echo "❌ Deployment failed! Initiating automated rollback..."
+                                        
+                                        // Execute Kubernetes Rollout Undo
+                                        sh '''
+                                            export KUBECONFIG=$KUBECONFIG_FILE
+                                            echo "Rolling back backend deployment..."
+                                            kubectl rollout undo deployment/backend -n ${K8S_NAMESPACE} || true
+                                            
+                                            echo "Rolling back frontend deployment..."
+                                            kubectl rollout undo deployment/frontend -n ${K8S_NAMESPACE} || true
+                                        '''
+                                        
+                                        error("Pipeline aborted: Deployment failed and was automatically rolled back. Error: ${e.message}")
+                                    }
+                                    
+                                }
+                        }
                 }
             }
         }
