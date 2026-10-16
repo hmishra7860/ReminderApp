@@ -21,7 +21,7 @@ A full-stack reminder and birthday notification platform.
 
 ```
 remindercal/
-├── frontend/
+├── frontEnd/
 │   ├── css/
 │   │   ├── main.css
 │   │   ├── navbar.css
@@ -29,7 +29,7 @@ remindercal/
 │   │   ├── calendar.css
 │   │   └── modal.css
 │   ├── js/
-│   │   ├── api.js          ← API client + localStorage fallback
+│   │   ├── api.js          ← API client + token interceptor
 │   │   ├── calendar.js     ← Calendar rendering & navigation
 │   │   ├── reminders.js    ← Reminder CRUD + UI
 │   │   ├── birthdays.js    ← Birthday CRUD + UI
@@ -41,36 +41,32 @@ remindercal/
 │   ├── database/
 │   │   └── db.py           ← SQLAlchemy async engine + session
 │   ├── models/
-│   │   ├── models.py       ← ORM models (Reminder, Birthday, NotificationLog)
-│   │   └── schemas.py      ← Pydantic schemas
+│   │   ├── models.py       ← ORM models (User, Reminder, Birthday, NotificationLog)
+│   │   └── schemas.py      ← Pydantic validation schemas
 │   ├── routes/
+│   │   ├── auth.py         ← JWT authentication & SMTP user settings
 │   │   ├── reminders.py    ← CRUD endpoints
 │   │   ├── birthdays.py    ← CRUD endpoints
-│   │   └── health.py       ← /health, /
+│   │   └── health.py       ← /health checks
 │   ├── services/
-│   │   ├── email_service.py  ← SMTP email sender
-│   │   └── scheduler.py      ← APScheduler daily jobs
+│   │   ├── email_service.py  ← SMTP email dispatcher
+│   │   └── scheduler.py      ← APScheduler automated jobs
 │   ├── main.py
 │   ├── requirements.txt
 │   └── Dockerfile
 │
+├── k8s/                      ← Modular Kubernetes Manifests
+│   ├── database.yaml       ← PostgreSQL Deployment, PVC, & Service
+│   ├── backend.yaml        ← FastAPI Backend Deployment, InitContainer, & Service
+│   ├── frontend.yaml       ← Nginx Frontend Deployment, ConfigMap, & NodePort
+│   └── monitoring.yaml     ← Prometheus, Grafana, Node Exporter, Alertmanager
+│
 ├── nginx/
-│   └── default.conf        ← Reverse proxy config
-│
-├── monitoring/
-│   ├── prometheus/
-│   │   ├── prometheus.yml
-│   │   └── alert_rules.yml
-│   ├── grafana/
-│   │   └── provisioning/
-│   │       ├── datasources/prometheus.yml
-│   │       └── dashboards/dashboard.yml
-│   └── alertmanager/
-│       └── alertmanager.yml
-│
-├── docker-compose.yml
-├── .gitlab-ci.yml
-├── .env.example
+│   └── default.conf        ← Local Docker Compose reverse proxy config
+├── monitoring/             ← Prom/Grafana provisioning assets
+├── Jenkinsfile             ← Production Jenkins Multi-Agent CI/CD Pipeline
+├── docker-compose.yml      ← Local full-stack development compose file
+├── .env.example            ← Environment variable template
 └── README.md
 ```
 
