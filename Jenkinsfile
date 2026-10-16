@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'linux'
+        label 'ubuntu'
     }
 
     environment {
@@ -53,6 +53,7 @@ pipeline {
         }
 
         stage('Inject Secrets & Deploy to K3s') {
+            agent { label 'linux' }
             steps {
                 withCredentials([
                     file(credentialsId: 'k3s-kubeconfig', variable: 'KUBECONFIG_FILE'),
