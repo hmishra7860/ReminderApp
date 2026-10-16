@@ -51,7 +51,8 @@ pipeline {
                     string(credentialsId: 'postgres-user', variable: 'PG_USER'),
                     string(credentialsId: 'postgres-password', variable: 'PG_PASS'),
                     string(credentialsId: 'postgres-db', variable: 'PG_DB'),
-                    string(credentialsId: 'jwt-secret', variable: 'JWT_SEC')
+                    string(credentialsId: 'jwt-secret', variable: 'JWT_SEC'),
+                    string(credentialsId: 'grafana-admin-password', variable: 'GRAFANA_PW')
                 ]) {
                     sh '''
                         export KUBECONFIG=$KUBECONFIG_FILE
@@ -69,6 +70,7 @@ pipeline {
                             --from-literal=POSTGRES_DB="${PG_DB}" \
                             --from-literal=DATABASE_URL="${DB_URL}" \
                             --from-literal=JWT_SECRET="${JWT_SEC}" \
+                            --from-literal=GF_SECURITY_ADMIN_PASSWORD="${GRAFANA_PW}" \
                             --dry-run=client -o yaml | kubectl apply -f -
 
                         # 3. Replace image placeholders in manifests with current build tag
