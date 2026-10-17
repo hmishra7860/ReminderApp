@@ -13,9 +13,64 @@ env:
   K8S_NAMESPACE: "remindercal"
 
 jobs:
-  build-and-deploy:
+  lint:
+    name: Lint Backend
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run Ruff Linter
+        run: |
+          pip install ruff --quiet
+          cd backend
+          ruff check . --ignore B008 --fix
+
+  test:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: remindercal_test #database name for testing
+          POSTGRES_USER: rcal         #username for test database
+          POSTGRES_PASSWORD: rcalpass #password for test database
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Dependencies & Run Pytest
+        env:
+          DATABASE_URL: "postgresql+asyncpg://rcal:rcalpass@localhost:5432/remindercal_test"
+        run: |
+          cd backend
+          pip install -r requirements.txt pytest pytest-asyncio httpx --quiet
+          python -m pytest tests/ -v --tb=short
+
+  build-and-push:
+    name: Build & Push Docker Images
+    needs: [lint, test]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -30,7 +85,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          file: ./backend/Dockerfile
           push: true
           tags: |
             ${{ env.BACKEND_IMAGE }}:${{ env.IMAGE_TAG }}
@@ -40,11 +94,18 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./frontEnd
-          file: ./frontEnd/Dockerfile
           push: true
           tags: |
             ${{ env.FRONTEND_IMAGE }}:${{ env.IMAGE_TAG }}
             ${{ env.FRONTEND_IMAGE }}:latest
+
+  deploy:
+    name: Deploy to K3s
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up Kubectl
         uses: azure/setup-kubectl@v3
@@ -56,10 +117,8 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
           export KUBECONFIG=~/.kube/config
 
-          # 1. Ensure Namespace Exists
           kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
 
-          # 2. Sync Kubernetes Secrets
           DB_URL="postgresql+asyncpg://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/${{ secrets.POSTGRES_DB }}"
 
           kubectl create secret generic rcal-app-secrets \
@@ -72,11 +131,9 @@ jobs:
               --from-literal=GF_SECURITY_ADMIN_PASSWORD="${{ secrets.GRAFANA_ADMIN_PASSWORD }}" \
               --dry-run=client -o yaml | kubectl apply -f -
 
-          # 3. Replace image placeholders in manifests
           sed -i "s|REGISTRY_PLACEHOLDER|${{ env.DOCKER_REGISTRY }}|g" k8s/backend.yaml k8s/frontend.yaml
           sed -i "s|TAG_PLACEHOLDER|${{ env.IMAGE_TAG }}|g" k8s/backend.yaml k8s/frontend.yaml
 
-          # 4. Apply Manifests with Rollout Validation
           kubectl apply -f k8s/database.yaml
           
           kubectl apply -f k8s/backend.yaml
@@ -90,10 +147,7 @@ jobs:
       - name: Automated Rollback on Failure
         if: failure() && steps.deploy.outcome == 'failure'
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
           export KUBECONFIG=~/.kube/config
-
           echo "❌ Deployment failed! Initiating automated rollback..."
           kubectl rollout undo deployment/backend -n ${{ env.K8S_NAMESPACE }} || true
           kubectl rollout undo deployment/frontend -n ${{ env.K8S_NAMESPACE }} || true
