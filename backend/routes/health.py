@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from fastapi import APIRouter
 
@@ -7,7 +7,7 @@ router = APIRouter()
 
 @router.get("/health")
 async def health():
-    return {"status": "ok", "timestamp": datetime.now(datetime.timezone.utc).isoformat()}
+    return {"status": "ok", "timestamp": datetime.now(IST).isoformat()}
 
 
 @router.get("/")
