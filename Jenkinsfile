@@ -39,13 +39,14 @@ pipeline {
 
                     try {
                         // Run pytest inside a python container linked to the test database
+                        // Run pytest inside a python container linked to the test database
                         sh '''
                             echo "🧪 Running Pytest unit & integration tests..."
                             docker run --rm --link test_postgres:postgres \
                                 -v $(pwd)/backend:/app -w /app \
                                 -e DATABASE_URL="postgresql+asyncpg://rcal:rcalpass@postgres:5432/remindercal_test" \
                                 python:3.12-slim \
-                                sh -c "pip install -r requirements.txt pytest pytest-asyncio httpx --quiet && pytest tests/ -v --tb=short"
+                                sh -c "pip install -r requirements.txt pytest pytest-asyncio httpx --quiet && python -m pytest tests/ -v --tb=short"
                         '''
                     } finally {
                         // Ensure the temporary test database container is always cleaned up
