@@ -1,8 +1,20 @@
-from datetime import datetime, date
-from sqlalchemy import String, Text, Date, Time, DateTime, Integer, ForeignKey, Enum, Column, Boolean, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from database.db import Base
 import enum
+from datetime import date, datetime
+
+from sqlalchemy import (
+    Column,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from database.db import Base
+
 
 class CategoryEnum(str, enum.Enum):
     Work = "Work"

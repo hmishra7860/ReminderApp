@@ -1,7 +1,7 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.db import get_db
 from models.models import Birthday, User
@@ -20,7 +20,7 @@ async def create_birthday(payload: BirthdayCreate, db: AsyncSession = Depends(ge
     return birthday
 
 
-@router.get("", response_model=List[BirthdayResponse])
+@router.get("", response_model=list[BirthdayResponse])
 async def list_birthdays(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(select(Birthday).where(Birthday.user_id == current_user.id).order_by(Birthday.name))
     return result.scalars().all()

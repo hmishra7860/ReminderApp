@@ -3,12 +3,12 @@ Email notification service.
 Configured via environment variables:
   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL
 """
-import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from datetime import date
 import logging
+import smtplib
+from datetime import date
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from models.models import User
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def _send(to: str, subject: str, html: str, user: User) -> bool:
             
         print(f"📧 EMAIL SERVICE: Email sent to {to}: {subject}")
         return True
-    except Exception as e:
+    except (smtplib.SMTPException, ConnectionError, OSError) as e:
         print(f"📧 EMAIL SERVICE: Failed to send email to {to}: {e}")
         return False
 

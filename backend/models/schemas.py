@@ -1,8 +1,10 @@
+from datetime import date as dt_date
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr, Field
-from datetime import date as dt_date , datetime
-from typing import Optional
+
 from models.models import CategoryEnum
-from enum import Enum
+
 
 # ─── Auth & User ──────────────────────────────────────────────────────────────
 class UserCreate(BaseModel):
@@ -11,12 +13,12 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8)
     confirm_password: str = Field(..., min_length=8)
 
-class UserResponse(BaseModel):
-    id: int
-    full_name: str
-    email: EmailStr
-    created_at: datetime
-    model_config = {"from_attributes": True}
+#class UserResponse(BaseModel):
+#    id: int
+#    full_name: str
+#    email: EmailStr
+#    created_at: datetime
+#    model_config = {"from_attributes": True}
 
 class Token(BaseModel):
     access_token: str
@@ -30,11 +32,11 @@ class Token(BaseModel):
 # ─── Reminder ─────────────────────────────────────────────────────────────────
 class ReminderBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
-    description: Optional[str] = None
+    description: str | None = None
     category: CategoryEnum = CategoryEnum.Personal
     date: dt_date
-    time: Optional[str] = None
-    recurrence: Optional[str] = None  # Default to "none" if not provided
+    time: str | None = None
+    recurrence: str | None = None  # Default to "none" if not provided
 
 
 class ReminderCreate(ReminderBase):
@@ -42,12 +44,12 @@ class ReminderCreate(ReminderBase):
 
 
 class ReminderUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    category: Optional[CategoryEnum] = None
-    date: Optional[dt_date] = None
-    time: Optional[str] = None
-    recurrence: Optional[str] = None
+    title: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    category: CategoryEnum | None = None
+    date: dt_date | None = None
+    time: str | None = None
+    recurrence: str | None = None
 
 class ReminderResponse(ReminderBase):
     id: int
@@ -59,9 +61,9 @@ class ReminderResponse(ReminderBase):
 # ─── Birthday ─────────────────────────────────────────────────────────────────
 class BirthdayBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    email: Optional[str] = None
+    email: str | None = None
     date_of_birth: dt_date
-    custom_message: Optional[str] = None
+    custom_message: str | None = None
 
 
 class BirthdayCreate(BirthdayBase):
@@ -77,11 +79,11 @@ class BirthdayResponse(BirthdayBase):
 
 # Add to backend/models/schemas.py
 class UserSmtpUpdate(BaseModel):
-    smtp_host: Optional[str] = None
-    smtp_port: Optional[int] = None
-    smtp_user: Optional[str] = None
-    smtp_pass: Optional[str] = None
-    from_email: Optional[str] = None
+    smtp_host: str | None = None
+    smtp_port: int | None = None
+    smtp_user: str | None = None
+    smtp_pass: str | None = None
+    from_email: str | None = None
 
 # Update UserResponse to return these fields to the frontend
 class UserResponse(BaseModel):
@@ -89,10 +91,10 @@ class UserResponse(BaseModel):
     full_name: str
     email: EmailStr
     created_at: datetime
-    smtp_host: Optional[str] = None
-    smtp_port: Optional[int] = None
-    smtp_user: Optional[str] = None
-    from_email: Optional[str] = None
+    smtp_host: str | None = None
+    smtp_port: int | None = None
+    smtp_user: str | None = None
+    from_email: str | None = None
     # Intentionally excluding smtp_pass for security
     model_config = {"from_attributes": True}
 

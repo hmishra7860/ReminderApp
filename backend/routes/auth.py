@@ -1,16 +1,16 @@
 import os
 from datetime import datetime, timedelta
-from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.db import get_db
 from models.models import User
-from models.schemas import UserCreate, UserResponse, Token, UserSmtpUpdate
+from models.schemas import Token, UserCreate, UserResponse, UserSmtpUpdate
 
 SECRET_KEY = os.getenv("JWT_SECRET", "super_secret_dev_key_change_in_prod")
 ALGORITHM = "HS256"
@@ -27,9 +27,9 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    expire = datetime.datetime.now(datetime.timezone.ist) + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 

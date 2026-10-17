@@ -2,16 +2,17 @@
 Background scheduler – runs daily checks and sends emails.
 Start alongside the FastAPI app using APScheduler.
 """
-import asyncio
 import logging
 from datetime import date
-from sqlalchemy import select
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy.orm import selectinload
 from dateutil.relativedelta import relativedelta
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
 from database.db import AsyncSessionLocal
-from models.models import Reminder, Birthday, NotificationLog
-from services.email_service import send_reminder_email, send_birthday_email
+from models.models import Birthday, NotificationLog, Reminder
+from services.email_service import send_birthday_email, send_reminder_email
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +20,9 @@ scheduler = AsyncIOScheduler()
 
 
 async def check_reminders():
-    print(f"=============================================")
-    print(f"🚀 SCHEDULER TRIGGERED: Checking reminders...")
-    print(f"=============================================")
+    print("=============================================")
+    print("🚀 SCHEDULER TRIGGERED: Checking reminders...")
+    print("=============================================")
     today = date.today()
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Reminder).options(selectinload(Reminder.owner)).where(Reminder.date == today))
@@ -59,9 +60,9 @@ async def check_reminders():
 
 
 async def check_birthdays():
-    print(f"=============================================")
-    print(f"🚀 SCHEDULER TRIGGERED: Checking birthdays...")
-    print(f"=============================================")
+    print("=============================================")
+    print("🚀 SCHEDULER TRIGGERED: Checking birthdays...")
+    print("=============================================")
     today = date.today()
     logger.info(f"DEBUG: Running birthday check for {today}")
     

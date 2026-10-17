@@ -1,12 +1,16 @@
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 from prometheus_fastapi_instrumentator import Instrumentator
+
+from database.db import Base, engine
+
 # Import all routers in one go
-from routes import reminders, birthdays, health, auth
-from database.db import engine, Base
+from routes import auth, birthdays, health, reminders
 from services.scheduler import start_scheduler
-import logging
+
 logger = logging.getLogger(__name__)
 logger.info("--- MAIN.PY IS LOADING ---")
 

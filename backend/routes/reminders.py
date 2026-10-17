@@ -1,7 +1,7 @@
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.db import get_db
 from models.models import Reminder, User
@@ -20,7 +20,7 @@ async def create_reminder(payload: ReminderCreate, db: AsyncSession = Depends(ge
     return reminder
 
 
-@router.get("", response_model=List[ReminderResponse])
+@router.get("", response_model=list[ReminderResponse])
 async def list_reminders(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     result = await db.execute(select(Reminder).where(Reminder.user_id == current_user.id).order_by(Reminder.date, Reminder.time))
     return result.scalars().all()
