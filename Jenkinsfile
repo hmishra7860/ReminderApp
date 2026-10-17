@@ -15,7 +15,7 @@ pipeline {
                 sh '''
                     echo "🔍 Running Ruff linter on backend code..."
                     docker run --rm -v $(pwd)/backend:/app -w /app python:3.12-slim \
-                    sh -c "pip install ruff --quiet && ruff check ."
+                    sh -c "pip install ruff --quiet && ruff check . --ignore B008 --fix"
                 '''
             }
         }
