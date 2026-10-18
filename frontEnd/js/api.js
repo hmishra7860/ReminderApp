@@ -55,7 +55,8 @@ const AuthAPI = {
   },
   register: (data) => apiFetch('/auth/register', { method: 'POST', body: data }),
   getProfile: () => apiFetch('/auth/profile'),
-  updateSmtp: (data) => apiFetch('/auth/profile/smtp', { method: 'PUT', body: data })
+  updateSmtp: (data) => apiFetch('/auth/profile/smtp', { method: 'PUT', body: data }),
+  updateProfile: (data) => apiFetch('/auth/profile', { method: 'PUT', body: data })
 };
 
 // ─── Reminder & Birthday CRUD (Updated to throw errors) ─────────────────────
@@ -71,6 +72,12 @@ const BirthdayAPI = {
   getAll: () => apiFetch('/birthdays'),
   create: (data) => apiFetch('/birthdays', { method: 'POST', body: data }),
   delete: (id) => apiFetch(`/birthdays/${id}`, { method: 'DELETE' }),
+};
+
+// ... existing ReminderAPI and BirthdayAPI
+
+const NotificationAPI = {
+  getAll: () => apiFetch('/notifications'),
 };
 
 // Note: LocalDB fallback remains unchanged, but production code should rely on the API.

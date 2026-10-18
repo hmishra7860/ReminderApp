@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.db import get_db
 from models.models import User
-from models.schemas import Token, UserCreate, UserResponse, UserSmtpUpdate
+from models.schemas import Token, UserCreate, UserResponse, UserSmtpUpdate, UserProfileUpdate
 
 SECRET_KEY = os.getenv("JWT_SECRET", "super_secret_dev_key_change_in_prod")
 ALGORITHM = "HS256"
@@ -29,7 +29,7 @@ def get_password_hash(password):
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
-    expire = datetime.now(datetime.timezone.ist) + (expires_delta or timedelta(minutes=15))
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -90,6 +90,23 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(
+    payload: UserProfileUpdate, 
+    current_user: User = Depends(get_current_user), 
+    db: AsyncSession = Depends(get_db)
+):
+    if payload.full_name is not None: current_user.full_name = payload.full_name
+    if payload.email is not None: current_user.email = payload.email
+    if payload.enable_email_reminders is not None: current_user.enable_email_reminders = payload.enable_email_reminders
+    if payload.enable_birthday_emails is not None: current_user.enable_birthday_emails = payload.enable_birthday_emails
+    if payload.enable_daily_digest is not None: current_user.enable_daily_digest = payload.enable_daily_digest
+    if payload.reminder_timing is not None: current_user.reminder_timing = payload.reminder_timing
+    
+    await db.commit()
+    await db.refresh(current_user)
     return current_user
 
 @router.put("/profile/smtp", response_model=UserResponse)

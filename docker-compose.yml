@@ -4,22 +4,22 @@ services:
 
   # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
-    container_name: rcal_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-remindercal}
-      POSTGRES_USER: ${POSTGRES_USER:-rcal}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rcal -d remindercal"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - rcal_net
+      image: postgres:16-alpine
+      container_name: rcal_postgres
+      restart: unless-stopped
+      environment:
+        POSTGRES_DB: ${POSTGRES_DB}
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+      networks:
+        - rcal_net
 
   # ── Backend (FastAPI) ───────────────────────────────────────────────────────
   backend:
@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
     environment:
       TZ: Asia/Kolkata
-      DATABASE_URL: postgresql+asyncpg://rcal:rcalpass@postgres:5432/remindercal
+      DATABASE_URL: ${DATABASE_URL}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}

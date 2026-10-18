@@ -445,3 +445,52 @@ body.unauthenticated .container {
 .auth-links a:hover {
   text-decoration: underline;
 }
+
+/* ─── Settings Layout & Logs ─────────────────────────── */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px; /* Left side takes remaining space, right side is exactly 380px */
+  gap: 24px;
+  padding: 24px 32px;
+  align-items: flex-start; /* THIS is the magic property that forces columns to the top */
+}
+
+/* Optional Pro-Tip: Make the right column sticky so it stays visible if you scroll down */
+.settings-right {
+  position: sticky;
+  top: 24px; 
+}
+
+/* Strip away the old margins from the cards so they align flush to the top */
+.settings-layout .settings-card {
+  margin: 0 0 20px 0 !important; 
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .settings-layout { grid-template-columns: 1fr; }
+  .settings-right { position: static; }
+}
+
+.log-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.log-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.log-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.log-msg {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+}

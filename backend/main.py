@@ -8,7 +8,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from database.db import Base, engine
 
 # Import all routers in one go
-from routes import auth, birthdays, health, reminders
+from routes import auth, birthdays, health, reminders, notifications
 from services.scheduler import start_scheduler
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(reminders.router, prefix="/reminders", tags=["Reminders"])
 app.include_router(birthdays.router, prefix="/birthdays", tags=["Birthdays"])
+app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 app.include_router(health.router, tags=["Health"])
 
 # ─── Prometheus metrics ────────────────────────────────────────────────────────

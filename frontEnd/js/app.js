@@ -1,3 +1,50 @@
+// Place this outside of your initialization block
+window.lastLogId = null;
+
+async function fetchAndRenderLogs(isPolling = false) {
+  try {
+    const logs = await NotificationAPI.getAll();
+    const container = document.getElementById('emailLogsList');
+
+    if (!logs.length) {
+      if (container) container.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No emails sent yet.</p>';
+      return;
+    }
+
+    const latest = logs[0];
+    
+    // Check if there is a newly sent email since the last poll
+    if (isPolling && window.lastLogId !== null && latest.id > window.lastLogId) {
+      const d = new Date(latest.sent_at + 'Z');
+      const timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      
+      // Output example: "Email has been sent to Anurag Mishra at 12:00"
+      showToast(`${latest.message} at ${timeStr}`, latest.status === 'sent' ? 'success' : 'error');
+    }
+    
+    window.lastLogId = latest.id;
+
+    if (container) {
+      container.innerHTML = logs.map(log => {
+        const d = new Date(log.sent_at + 'Z'); // 'Z' parses as UTC correctly
+        const timeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const icon = log.status === 'sent' 
+            ? '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>' 
+            : '<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger)"></i>';
+        
+        return `
+        <div class="log-item">
+            <div class="log-time">${icon} ${d.toLocaleDateString()}</div>
+            <div class="log-msg">${escHtml(log.message)} at ${timeStr}</div>
+        </div>`;
+      }).join('');
+    }
+  } catch (err) {
+    console.error("Failed to fetch logs:", err);
+  }
+}
+
+// ------------------------------ Frontend JavaScript: app.js -----------------------------
 window.AppState = { reminders: [], birthdays: [] };
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
@@ -118,6 +165,10 @@ const Auth = {
   logout: () => {
     localStorage.removeItem('rcal_token');
     document.body.classList.add('unauthenticated');
+    if (window.logPollingInterval) {
+        clearInterval(window.logPollingInterval);
+        window.logPollingInterval = null;
+    }
     switchPage('page-login');
   }
 };
@@ -139,11 +190,33 @@ const AppInit = {
         document.getElementById('fromEmail').value = profile.from_email || '';
         // Note: We intentionally leave the password blank for security
       }
+
+      if (document.getElementById('profNameInput')) {
+        document.getElementById('profNameInput').value = profile.full_name || '';
+        document.getElementById('profEmailInput').value = profile.email || '';
+        document.getElementById('prefEmailReminders').checked = profile.enable_email_reminders !== false; // Default to true if undefined
+        document.getElementById('prefBirthday').checked = profile.enable_birthday_emails !== false; // Default to true if undefined
+        document.getElementById('prefDigest').checked = profile.enable_daily_digest !== false; // Default to true if undefined
+        document.getElementById('prefTiming').value = profile.reminder_timing || '1 hour before';
+}
       
       document.body.classList.remove('unauthenticated');
       switchPage('page-dashboard');
       
-      await loadDataFromAPI(); // Fetch DB data and populate UI
+      await loadDataFromAPI(); 
+      
+      // Initialize Email Logs
+      await fetchAndRenderLogs(false);
+      
+      // Start background checking for new outgoing emails every 15 seconds
+      if (!window.logPollingInterval) {
+        window.logPollingInterval = setInterval(() => {
+          if (!document.body.classList.contains('unauthenticated')) {
+             fetchAndRenderLogs(true);
+          }
+        }, 15000); 
+      }
+      // ... (rest of your app.js)// Fetch DB data and populate UI
 
     } catch (err) {
       console.error("Session start failed:", err);
@@ -213,3 +286,64 @@ document.querySelector('.profile').addEventListener('click', () => {
     Auth.logout();
   }
 })();
+
+// Add at the bottom of app.js to handle the save button:
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('#saveProfileBtn');
+  if (!btn) return;
+  
+  e.preventDefault();
+  const data = {
+    full_name: document.getElementById('profNameInput').value.trim(),
+    email: document.getElementById('profEmailInput').value.trim(),
+    enable_email_reminders: document.getElementById('prefEmailReminders').checked,
+    enable_birthday_emails: document.getElementById('prefBirthday').checked,
+    enable_daily_digest: document.getElementById('prefDigest').checked,
+    reminder_timing: document.getElementById('prefTiming').value
+  };
+
+  try {
+    btn.textContent = "Saving..."; btn.disabled = true;
+    const updatedProfile = await AuthAPI.updateProfile(data);
+    
+    document.getElementById('profileName').textContent = updatedProfile.full_name;
+    document.getElementById('profileAvatar').textContent = updatedProfile.full_name.charAt(0).toUpperCase();
+    
+    showToast('Profile and preferences saved!', 'success');
+  } catch (err) {
+    showToast(err.message || 'Failed to save', 'error');
+  } finally {
+    btn.textContent = "Save Changes"; btn.disabled = false;
+  }
+});
+
+// ─── Auto-Save Preferences on Toggle ──────────────────────────────────────────
+// ['prefEmailReminders', 'prefBirthday', 'prefDigest', 'prefTiming'].forEach(id => {
+//   document.getElementById(id)?.addEventListener('change', async () => {
+    
+//     // Gather current states
+//     const data = {
+//       enable_email_reminders: document.getElementById('prefEmailReminders').checked,
+//       enable_birthday_emails: document.getElementById('prefBirthday').checked,
+//       enable_daily_digest: document.getElementById('prefDigest').checked,
+//       reminder_timing: document.getElementById('prefTiming').value
+//     };
+
+//     const nameVal = document.getElementById('profNameInput').value.trim();
+//     const emailVal = document.getElementById('profEmailInput').value.trim();
+//     if (nameEl && nameEl.value.trim()) data.full_name = nameEl.value.trim();
+//     if (emailEl && emailEl.value.trim()) data.email = emailEl.value.trim();
+
+//     try {
+//       await AuthAPI.updateProfile(data);
+//       showToast('Preferences updated automatically!', 'success');
+//     } catch (err) {
+//       console.error(err);
+//       showToast('Failed to save preference', 'error');
+//       // Revert the toggle visually if it failed to save
+//       if (document.getElementById(id) && id !== 'prefTiming') {
+//            document.getElementById(id).checked = !document.getElementById(id).checked; 
+//         }
+//     }
+//   });
+// });

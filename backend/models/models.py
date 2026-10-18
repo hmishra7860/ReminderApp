@@ -2,6 +2,7 @@ import enum
 from datetime import date, datetime
 
 from sqlalchemy import (
+    Boolean,
     Column,
     Date,
     DateTime,
@@ -41,6 +42,11 @@ class User(Base):
 
     reminders = relationship("Reminder", back_populates="owner", cascade="all, delete-orphan")
     birthdays = relationship("Birthday", back_populates="owner", cascade="all, delete-orphan")
+
+    enable_email_reminders: Mapped[bool] = mapped_column(Boolean, default=True)
+    enable_birthday_emails: Mapped[bool] = mapped_column(Boolean, default=True)
+    enable_daily_digest: Mapped[bool] = mapped_column(Boolean, default=False)
+    reminder_timing: Mapped[str] = mapped_column(String(50), default="1 hour before")
 
 class Reminder(Base):
     __tablename__ = "reminders"

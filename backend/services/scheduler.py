@@ -3,11 +3,11 @@ Background scheduler – runs daily checks and sends emails.
 Start alongside the FastAPI app using APScheduler.
 """
 import logging
-from datetime import date
+from datetime import date , datetime
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
 from database.db import AsyncSessionLocal
@@ -24,16 +24,40 @@ async def check_reminders():
     print("🚀 SCHEDULER TRIGGERED: Checking reminders...")
     print("=============================================")
     today = date.today()
+    current_time_str = datetime.now().strftime("%H:%M")
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(Reminder).options(selectinload(Reminder.owner)).where(Reminder.date == today))
+
+        if current_time_str == "08:00":
+            time_filter = or_(
+                Reminder.time == current_time_str, 
+                Reminder.time == None, 
+                Reminder.time == ""
+            )
+        else:
+            time_filter = Reminder.time == current_time_str
+
+        result = await db.execute(select(Reminder).options(selectinload(Reminder.owner)).where(Reminder.date == today).where(time_filter))
         reminders = result.scalars().all()
         
         # LOGGING: See how many reminders the system found
         logger.info(f"DEBUG: Found {len(reminders)} reminders for today.")
         
         for r in reminders:
-            # NORMAL CODE: Using your original function name and loop variable
-            success = send_reminder_email(r.owner, r.title, r.description, r.date, r.time)
+            success = False  # Initialize success variable
+            if not r.owner.enable_email_reminders: 
+                logger.info(f"DEBUG: Skipping reminder for {r.title} - Email reminders are disabled for this user.")
+                continue
+            else:
+              # NORMAL CODE: Using your original function name and loop variable
+              success = send_reminder_email(r.owner, r.title, r.description, r.date, r.time)
+
+            log = NotificationLog(
+                reminder_id=r.id,
+                email=r.owner.email,
+                status="sent" if success else "failed",
+                message=f"Email has been sent to {r.owner.full_name}"
+            )
+            db.add(log)
             
             if success:
                 logger.info(f"DEBUG: Reminder email for {r.title} passed to SMTP.")
@@ -82,6 +106,10 @@ async def check_birthdays():
                 logger.info(f"DEBUG: Found birthday for {b.name}, turning {age}")
                 
                 if b.email:
+
+                    if not b.owner.enable_birthday_emails:
+                        logger.info(f"DEBUG: Skipping birthday email for {b.name} because user disabled them.")
+                        continue
                     # Capture the result of the email send
                     sent = send_birthday_email(b.owner, b.email, b.name, age)
                     

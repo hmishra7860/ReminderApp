@@ -188,52 +188,89 @@
   </div>
 
   <!-- PAGE: Settings -->
+  <!-- PAGE: Settings -->
   <div id="page-settings" class="page">
     <div class="page-header">
       <h1><i class="fa-solid fa-gear"></i> Settings</h1>
     </div>
-    <div class="settings-card">
-      <h3>Custom SMTP Settings</h3>
-      <div class="form-group"><label>SMTP Host</label><input type="text" id="smtpHost" class="search-input" placeholder="smtp.gmail.com" /></div>
-      <div class="form-group"><label>SMTP Port</label><input type="number" id="smtpPort" class="search-input" placeholder="587" /></div>
-      <div class="form-group"><label>SMTP Username / Email</label><input type="email" id="smtpUser" class="search-input" placeholder="you@gmail.com" /></div>
-      <div class="form-group"><label>SMTP Password (App Password)</label><input type="password" id="smtpPass" class="search-input" placeholder="••••••••" /></div>
-      <div class="form-group"><label>From Email</label><input type="email" id="fromEmail" class="search-input" placeholder="you@gmail.com" /></div>
-      <button class="create-btn" id="saveSmtpBtn" style="margin-top:12px">Save SMTP Details</button>
+    
+    <div class="settings-layout">
+      
+      <!-- ========================================== -->
+      <!-- LEFT COLUMN START                          -->
+      <!-- ========================================== -->
+      <div class="settings-left">
+        
+        <div class="settings-card">
+          <h3>Custom SMTP Settings</h3>
+          <div class="form-group"><label>SMTP Host</label><input type="text" id="smtpHost" class="search-input" placeholder="smtp.gmail.com" /></div>
+          <div class="form-group"><label>SMTP Port</label><input type="number" id="smtpPort" class="search-input" placeholder="587" /></div>
+          <div class="form-group"><label>SMTP Username / Email</label><input type="email" id="smtpUser" class="search-input" placeholder="you@gmail.com" /></div>
+          <div class="form-group"><label>SMTP Password (App Password)</label><input type="password" id="smtpPass" class="search-input" placeholder="••••••••" /></div>
+          <div class="form-group"><label>From Email</label><input type="email" id="fromEmail" class="search-input" placeholder="you@gmail.com" /></div>
+          <button class="create-btn" id="saveSmtpBtn" style="margin-top:12px">Save SMTP Details</button>
+        </div>
 
-      <h3>Email Notifications</h3>
-      <label class="toggle-row">
-        <span>Enable email reminders</span>
-        <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
-      </label>
-      <label class="toggle-row">
-        <span>Birthday wish emails</span>
-        <label class="switch"><input type="checkbox" checked /><span class="slider"></span></label>
-      </label>
-      <label class="toggle-row">
-        <span>Daily digest</span>
-        <label class="switch"><input type="checkbox" /><span class="slider"></span></label>
-      </label>
-    </div>
-    <div class="settings-card">
-      <h3>Notification Timing</h3>
-      <div class="form-group">
-        <label>Remind me</label>
-        <select class="filter-select">
-          <option>At time of event</option>
-          <option>15 minutes before</option>
-          <option selected>1 hour before</option>
-          <option>1 day before</option>
-        </select>
+        <div class="settings-card">
+          <h3>Email Notifications</h3>
+          <label class="toggle-row">
+            <span>Enable email reminders</span>
+            <label class="switch"><input type="checkbox" id="prefEmailReminders" /><span class="slider"></span></label>
+          </label>
+          <label class="toggle-row">
+            <span>Birthday wish emails</span>
+            <label class="switch"><input type="checkbox" id="prefBirthday" /><span class="slider"></span></label>
+          </label>
+          <label class="toggle-row">
+            <span>Daily digest</span>
+            <label class="switch"><input type="checkbox" id="prefDigest" /><span class="slider"></span></label>
+          </label>
+        </div>
+
+        <div class="settings-card">
+          <h3>Notification Timing</h3>
+          <div class="form-group">
+            <label>Remind me</label>
+            <select id="prefTiming" class="filter-select">
+              <option>At time of event</option>
+              <option>15 minutes before</option>
+              <option selected>1 hour before</option>
+              <option>1 day before</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Profile</h3>
+          <div class="form-group"><label>Display Name</label><input type="text" id="profNameInput" class="search-input" value="Ritik" /></div>
+          <div class="form-group"><label>Email</label><input type="email" id="profEmailInput" class="search-input" placeholder="you@example.com" /></div>
+          <button class="create-btn" id="saveProfileBtn" style="margin-top:12px">Save Changes</button>
+        </div>
+
+      </div> 
+      <!-- ========================================== -->
+      <!-- LEFT COLUMN END (THIS DIV IS CRUCIAL)      -->
+      <!-- ========================================== -->
+
+
+      <!-- ========================================== -->
+      <!-- RIGHT COLUMN START                         -->
+      <!-- ========================================== -->
+      <div class="settings-right">
+        <div class="settings-card notification-logs-card">
+          <h3><i class="fa-solid fa-paper-plane"></i> Delivery Logs</h3>
+          <div id="emailLogsList">
+            <p style="color:var(--text-muted);font-size:13px">Loading logs...</p>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="settings-card">
-      <h3>Profile</h3>
-      <div class="form-group"><label>Display Name</label><input type="text" class="search-input" value="Ritik" /></div>
-      <div class="form-group"><label>Email</label><input type="email" class="search-input" placeholder="you@example.com" /></div>
-      <button class="create-btn" style="margin-top:12px">Save Changes</button>
-    </div>
-  </div>
+      <!-- ========================================== -->
+      <!-- RIGHT COLUMN END                           -->
+      <!-- ========================================== -->
+
+    </div> <!-- END settings-layout -->
+  </div> <!-- END page-settings -->
+ 
 
   <!-- MODAL: Create / Edit Reminder -->
   <div id="reminderModal" class="modal-overlay">
