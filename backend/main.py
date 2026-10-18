@@ -55,4 +55,5 @@ app.include_router(birthdays.router, prefix="/birthdays", tags=["Birthdays"])
 app.include_router(health.router, tags=["Health"])
 
 # ─── Prometheus metrics ────────────────────────────────────────────────────────
-Instrumentator().instrument(app).expose(app)
+#Instrumentator().instrument(app).expose(app)
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
