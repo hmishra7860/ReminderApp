@@ -155,18 +155,21 @@ pipeline {
                                 kubectl rollout undo deployment/frontend -n ${K8S_NAMESPACE} || true
                             '''
                             error("Pipeline aborted: Deployment failed and was automatically rolled back. Error: ${e.message}")
-                        }
+                            }
+                    }
                     }
                 }
             }
         }
-    }
 
-    post {
-        always {
-            node('ubuntu') 
-            {
-                sh 'docker image prune -f || true'
-        }
-    }
+
+
+           post{
+               always {
+                 node('ubuntu') {
+                      sh 'docker image prune -f || true'
+                    }
+                }
+            }
+
 }
